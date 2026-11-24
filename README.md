@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CRM – Lead-Management
 
-## Getting Started
+Web-App für das Team, um Leads zu verwalten. Sie ist gebaut mit **Next.js**, **Prisma** und **PostgreSQL** (Supabase).
 
-First, run the development server:
+## Funktionen
+
+- **Leads**: Kontaktdaten, Quelle (bei „Empfehlung“ mit *Empfohlen von*), Zuständig
+- **Rahmeninformationen (ICP)**: Kerngeschäft, Anzahl Mitarbeiter, verwaltete Objekte, Einheiten, geschätztes Alter
+- **Pipeline**: Setting → Closing → Abgeschlossen, dazu *Verloren*
+- **Aktivitäten-Verlauf**: Kontaktiert (mit Ergebnis), E-Mail, Meeting, Notiz. Datum und Bearbeiter werden automatisch gesetzt.
+  - *Termin vereinbart (Closing)* setzt den Lead automatisch auf **Closing**
+  - *Kein Interesse* bietet an, den Lead auf **Verloren** zu setzen
+  - *Rückruf* und *Termin* legen direkt eine Wiedervorlage an
+- **Wiedervorlagen** mit Fälligkeitsdatum. Die Übersicht zeigt „Heute fällig / Überfällig“.
+- **Klick-zum-Anrufen** (`tel:`) und **Klick-zum-Mailen** (`mailto:`)
+- **Duplikat-Erkennung** über E-Mail, Telefon (normalisiert) und Firmenname, beim Anlegen und beim Import
+- **CSV-Import** mit automatischer Spalten-Erkennung, Excel-Umlauten und einer Entscheidung pro Duplikat: überspringen, zusammenführen oder neu anlegen
+- **CSV-Export** (Excel-kompatibel, berücksichtigt die aktiven Filter)
+- **Team-Login**: Der Admin legt Teammitglieder an
+
+## Lokal starten
+
+Voraussetzungen: Node.js 20+ und eine PostgreSQL-Datenbank (lokal oder Supabase).
 
 ```bash
+npm install
+cp .env.example .env      # DATABASE_URL, DIRECT_URL und AUTH_SECRET eintragen
+npx prisma migrate deploy # Tabellen anlegen
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Danach <http://localhost:3000> öffnen. Beim ersten Aufruf erscheint die **Ersteinrichtung** für das Admin-Konto.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Online stellen (Supabase + Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Supabase**: Auf supabase.com ein Projekt anlegen, Region **Frankfurt (eu-central-1)**.
+   Unter *Connect → ORMs → Prisma* stehen die beiden Verbindungs-URLs:
+   - `DATABASE_URL`: Transaction Pooler (Port 6543, mit `?pgbouncer=true`)
+   - `DIRECT_URL`: Session Pooler (Port 5432)
+2. **Tabellen anlegen** (einmalig, lokal mit den Supabase-URLs in `.env`):
+   `npx prisma migrate deploy`
+3. **Vercel**: Das GitHub-Repo importieren und unter *Environment Variables* `DATABASE_URL`, `DIRECT_URL` und `AUTH_SECRET` setzen.
+   Für `AUTH_SECRET` einen zufälligen String verwenden, z. B. aus `openssl rand -base64 32`.
+4. Die Vercel-URL öffnen, die Ersteinrichtung durchlaufen und unter **Team** die Kollegen anlegen.
 
-## Learn More
+## Projektstruktur
 
-To learn more about Next.js, take a look at the following resources:
+```
+prisma/schema.prisma        Datenmodell
+src/app/(app)/              Seiten (Übersicht, Leads, Wiedervorlagen, Import, Team, Konto)
+src/app/actions/            Server-Logik (Leads, Aktivitäten, Aufgaben, Import, Team, Login)
+src/app/api/export/         CSV-Export
+src/lib/                    Datenbank, Login, Duplikat-Erkennung, Beschriftungen
+src/components/             Formulare und UI-Bausteine
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Auswahllisten wie Kontakt-Ergebnisse oder Kerngeschäft werden in `prisma/schema.prisma` (Enums) und `src/lib/labels.ts` (Beschriftungen) angepasst.
