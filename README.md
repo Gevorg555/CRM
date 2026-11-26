@@ -35,10 +35,9 @@ Danach <http://localhost:3000> öffnen. Beim ersten Aufruf erscheint die **Erste
 
 1. **Supabase**: Auf supabase.com ein Projekt anlegen, Region **Frankfurt (eu-central-1)**.
    Unter *Connect → ORMs → Prisma* stehen die beiden Verbindungs-URLs:
-   - `DATABASE_URL`: Transaction Pooler (Port 6543, mit `?pgbouncer=true`)
+   - `DATABASE_URL`: Transaction Pooler (Port 6543, mit `?pgbouncer=true&connection_limit=1`)
    - `DIRECT_URL`: Session Pooler (Port 5432)
-2. **Tabellen anlegen** (einmalig, lokal mit den Supabase-URLs in `.env`):
-   `npx prisma migrate deploy`
+2. **Tabellen** werden beim Build automatisch angelegt bzw. aktualisiert (`prisma migrate deploy` ist Teil von `npm run build`).
 3. **Vercel**: Das GitHub-Repo importieren und unter *Environment Variables* `DATABASE_URL`, `DIRECT_URL` und `AUTH_SECRET` setzen.
    Für `AUTH_SECRET` einen zufälligen String verwenden, z. B. aus `openssl rand -base64 32`.
 4. Die Vercel-URL öffnen, die Ersteinrichtung durchlaufen und unter **Team** die Kollegen anlegen.
